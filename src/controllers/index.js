@@ -3,5 +3,7 @@
  */
 
 module.exports = {
-   infoContoller : require('./info-controller')
+   infoContoller : require('./info-controller'),
+   BookingController : require('./booking-controller')
 }
+
