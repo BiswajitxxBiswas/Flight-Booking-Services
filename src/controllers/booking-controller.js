@@ -9,13 +9,31 @@ async function CreateBooking(req,res) {
             noOfSeats : req.body.noOfSeats,
             userId : req.body.userId
         });
-        // console.log('Inside Controller Succ',airplane);
         SuccessResponse.data = airplane;
         return res
             .status(StatusCodes.CREATED)
             .json(SuccessResponse);
     } catch (error) {
-        // console.log(`Error in Controller`,error);
+        ErrorResponse.error = error;
+        return res
+            .status(StatusCodes.INTERNAL_SERVER_ERROR)
+            .json(ErrorResponse);
+    }
+}
+
+async function makePayment(req,res) {
+    try {
+        const response = await BookingService.makePayment({
+            bookingId : req.body.bookingId,
+            userId : req.body.userId,
+            totalCost : req.body.totalCost
+        });
+        SuccessResponse.data = response;
+        return res
+                .status(StatusCodes.OK)
+                .json(SuccessResponse);
+
+    } catch (error) {
         ErrorResponse.error = error;
         return res
             .status(StatusCodes.INTERNAL_SERVER_ERROR)
@@ -24,5 +42,6 @@ async function CreateBooking(req,res) {
 }
 
 module.exports = {
-    CreateBooking 
+    CreateBooking,
+    makePayment
 }

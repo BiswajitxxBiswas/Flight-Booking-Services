@@ -5,6 +5,8 @@ const { serverConfig } = require('../config');
 const { BookingRepository } = require('../repositories');
 const AppError = require('../utils/errors/app-errors');
 const db = require('../models');
+const { Enums } = require('../utils/common');
+const { CANCELLED, BOOKED } = Enums.Booking_Status;
 
 const bookingRepository = new BookingRepository();
 
@@ -39,7 +41,49 @@ async function CreateBooking(data){
     }
 }
 
+async function makePayment(data) {
+    const transaction = await db.sequelize.transaction();
+
+    try {
+
+        const bookingDetails = await bookingRepository.getBooking(data.bookingId, transaction);
+        
+        if( bookingDetails.status == CANCELLED ){
+            throw new AppError(`The Booking has Expired`,StatusCodes.BAD_REQUEST);
+        }
+
+        const bookingTime = new Date(bookingDetails.createdAt);
+        const currentTime = new Date();
+
+        if(currentTime  - bookingTime > 300000 ){
+
+            await bookingRepository.updateBooking(data.bookingId,{status : CANCELLED}, transaction);
+            throw new AppError(`Session Has Expired`,StatusCodes.BAD_REQUEST);
+        }
+
+        if(data.totalCost != bookingDetails.totalCost ){
+            await bookingRepository.updateBooking(data.bookingId,{status : CANCELLED}, transaction);
+            throw new AppError(`The Amount of Payment Does Not Match`,StatusCodes.BAD_REQUEST);
+        }
+
+        if(data.userId != bookingDetails.userId ){
+            await bookingRepository.updateBooking(data.bookingId,{status : CANCELLED}, transaction);
+            throw new AppError(`The userId of corresponding User Does Not Match`,StatusCodes.BAD_REQUEST);
+        }
+
+        await bookingRepository.updateBooking(data.bookingId, {status : BOOKED}, transaction);
+        
+        await transaction.commit();
+        
+        return bookingDetails;
+        
+    } catch (error) {
+        await transaction.rollback();
+        return error;
+    }
+}
     
 module.exports = {
-    CreateBooking
+    CreateBooking,
+    makePayment
 }
