@@ -1,6 +1,7 @@
 const express = require('express');
 
 const {serverConfig,loggerConfig} = require("./config");
+const CRON = require('./utils/common/corn-jobs');
 
 const apiRoutes = require('./routes');
 
@@ -14,6 +15,7 @@ app.use('/api',apiRoutes);
 
 
 app.listen(serverConfig.PORT,()=>{
-    console.log(`Server is running on the PORT ${serverConfig.PORT}`)
+    console.log(`Server is running on the PORT ${serverConfig.PORT}`);
+    CRON();
 })
 
